@@ -1,7 +1,6 @@
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.responses import JSONResponse, FileResponse
-import uvicorn
-import uuid
+import uuid,uvicorn
 from calcUtils import calculations
 
 app = FastAPI()

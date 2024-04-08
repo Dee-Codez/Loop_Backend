@@ -1,11 +1,9 @@
-import os
+import os,psycopg2,pytz,csv
 from dotenv import load_dotenv
-import psycopg2
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-import pytz
 from pytz import utc, timezone
-import csv
+ 
 
 load_dotenv()
 DB_URI = os.getenv('DATABASE_URL')
