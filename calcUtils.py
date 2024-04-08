@@ -52,7 +52,7 @@ def storeStatus(cursor,store_id,timezone_str,current_time):
 #Getting the activity status for a whole day as per it's open and close timings
 def dayStatus(cursor,store_id,timezone_str,current_time):
 
-    # Get the date of next day
+    # Get the date of next day to filter the data for the whole current day
     nxtday = current_time + relativedelta(days=1)
 
     # Get the open and close times for the day before
@@ -84,19 +84,16 @@ def calculations(report_id: str):
     current_time = datetime.now(pytz.UTC)
     current_time = current_time.replace(year=2023, month=1, day=25)
 
-    # Get the date and time 1 hour before, 1 day before and 1 week before the current date and time
+    # Get the date and time 1 hour before and a day before the current date and time
     hourbefore = current_time - relativedelta(hours=1)
     daybefore = current_time - relativedelta(days=1)
-    weekbefore = current_time - relativedelta(weeks=1)
-
-    # Get today's day of the week in integer format(UTC Timezone)
-    weekday = datetime.now(pytz.UTC).weekday()
 
     # Connect to the database
     conn = psycopg2.connect(DB_URI)
     # Create a cursor object
     cur = conn.cursor()
-    cur.execute(f"SELECT * FROM timezones LIMIT {2}; ")
+    # Get the store IDs and timezones of only 5 stores from the timezones table
+    cur.execute(f"SELECT * FROM timezones LIMIT {5}; ")
     k=0
     res1 = cur.fetchall()
     for row in res1:
@@ -105,6 +102,7 @@ def calculations(report_id: str):
         timezone_str = row[1]
         print(store_id,timezone_str)
 
+        # Get the open and close times of the store for the current day
         sameday_open_times_utc,sameday_close_times_utc = storeStatus(cur,store_id,timezone_str,current_time)
 
         open_times_str = ','.join(sameday_open_times_utc)
@@ -120,7 +118,7 @@ def calculations(report_id: str):
                 hourres = cur.fetchall()
                 hourres = [[item.isoformat() if isinstance(item, datetime) else item for item in row] for row in hourres]
         
-        #Interpolating Uptime and Downtime for the last hour
+        #Extrapolating Uptime and Downtime for the last hour
         if len(hourres) == 0:
             #If no data is available for the last hour, considering it active for the whole hour
             hour_uptime = 60
@@ -142,7 +140,7 @@ def calculations(report_id: str):
         #Starting computation for the day before
         dayres = dayStatus(cur,store_id,timezone_str,daybefore)
 
-        #Interpolating Uptime and Downtime for the whole day before
+        #Extrapolating Uptime and Downtime for the whole day before
         if(len(dayres) == 0):
             #If no data is available for the whole day before, considering it active for the whole day
             day_uptime = 24
@@ -170,7 +168,7 @@ def calculations(report_id: str):
             weekres.append(dayres)
 
 
-        #Interpolating Uptime and Downtime for the whole week
+        #Extrapolating Uptime and Downtime for the whole week
         weekres_up=[]
         weekres_down=[]
         for singleday in weekres:
@@ -198,7 +196,7 @@ def calculations(report_id: str):
         filename = f'output_{report_id}.csv'
 
 
-        data = {"store_id": store_id, "timezone": timezone_str, "open_time": open_times_str, "close_time": close_times_str,"hour_uptime":hour_uptime,"hour_downtime":hour_downtime ,"day_uptime":day_uptime,"day_downtime":day_downtime ,"week_uptime":weekres_uptime,"week_downtime":weekres_downtime}
+        data = {"store_id": store_id,"hour_uptime":hour_uptime,"hour_downtime":hour_downtime ,"day_uptime":day_uptime,"day_downtime":day_downtime ,"week_uptime":weekres_uptime,"week_downtime":weekres_downtime}
 
         # Check if file exists to write headers
         if not os.path.isfile(filename):

@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+uuid
+python-dotenv
+psycopg2
+DateTime
+pytz
