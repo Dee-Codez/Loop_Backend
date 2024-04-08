@@ -5,3 +5,4 @@ python-dotenv
 psycopg2
 DateTime
 pytz
+python-dateutil
