@@ -23,7 +23,7 @@ def home():
     resp ={"message":"Welcome to the Loop Report Generation API. To trigger the report generation, use the /trigger_reportgen endpoint.",
            "endpoints":{"/trigger_reportgen":"Triggers the report generation process and returns the report ID.",
                         "/status/{report_id}":"Returns the status of the report with the given report ID. If the report is completed, the report file will be downloaded."},
-           "example":"http://127.0.0.1:8000/trigger_reportgen",            
+           "example":"https://loop-api-gqet.onrender.com/trigger_reportgen",            
            }
     return JSONResponse(status_code=200,content=resp)
     
@@ -45,7 +45,7 @@ def reportgen(background_tasks: BackgroundTasks):
                   "report_id":str(report_id), 
                   "file_name":f'output_{report_id}.csv',
                   "details":"The report is being generated in the background. To conserve compute power(Limited Resources On Free Instance) the number of stores to be reported have been limited to 5. The report will be available at the get_report endpoint shortly.Get Report Status at the URL below",
-                  "status_url":f"http://127.0.0.1:8000/status/{report_id}",
+                  "status_url":f"https://loop-api-gqet.onrender.com/status/{report_id}",
                   }
         
         return JSONResponse(status_code=200,content=output)
@@ -69,7 +69,7 @@ def get_return(report_id: str):
         file_contents = file_contents.split('\n')
         output = {"status": status,
                   "message":"The report has been generated successfully. Use the download_url to download the report file.",
-                  "download_url": f"http://127.0.0.1:8000/download/{report_id}",
+                  "download_url": f"https://loop-api-gqet.onrender.com/download/{report_id}",
                   "File Content": file_contents,
                   }
         return JSONResponse(status_code=200, content=output)
