@@ -3,10 +3,12 @@ from dotenv import load_dotenv
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from pytz import utc, timezone
- 
+import boto3
 
 load_dotenv()
 DB_URI = os.getenv('DATABASE_URL')
+AWS_ACCESS_KEY = os.getenv('AWS_ACCESS')
+AWS_SECRET_KEY = os.getenv('AWS_SECRET')
 
 #Getting the store opening and closing timings for a specific day
 def storeStatus(cursor,store_id,timezone_str,current_time):
@@ -209,6 +211,11 @@ def calculations(report_id: str):
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writerow(data)
 
+        # Initialize the S3 client
+        s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_SECRET_KEY, region_name='ap-southeast-2')
+        # Upload the CSV file to S3
+        with open(filename, 'rb') as data:
+            s3.upload_fileobj(data, 'testbucket-debam', filename)
 
         print(f"Report for store {k},i.e. {store_id} has been generated successfully.")
         fin_data = {"store_id": store_id, "timezone": timezone_str, "open_time": open_times_str, "close_time": close_times_str,"hour_uptime":hour_uptime,"hour_downtime":hour_downtime ,"day_uptime":day_uptime,"day_downtime":day_downtime ,"week_uptime":weekres_uptime,"week_downtime":weekres_downtime ,"hr_data": hourres, "day_data": dayres,"week_data":weekres}

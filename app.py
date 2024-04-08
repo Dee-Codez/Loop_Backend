@@ -1,9 +1,14 @@
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.responses import JSONResponse, FileResponse
-import uuid,uvicorn
+import uuid,uvicorn,boto3,os
 from calcUtils import calculations
+from dotenv import load_dotenv
 
 app = FastAPI()
+
+load_dotenv()
+AWS_ACCESS_KEY = os.getenv('AWS_ACCESS')
+AWS_SECRET_KEY = os.getenv('AWS_SECRET')
 
 # Global dictionary to store the status of each report
 report_statuses = {}
@@ -55,15 +60,25 @@ def reportgen(background_tasks: BackgroundTasks):
 
 @app.get('/status/{report_id}')
 def get_return(report_id: str):
+
+    # Initialize the S3 client
+    s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_SECRET_KEY, region_name='ap-southeast-2')
+
+
+
     # Return the status of the report
     status = report_statuses.get(report_id, 'Not found')
     if(status == 'Not found'):
-        raise HTTPException(status_code=404, detail='Report ID not found')
+        return JSONResponse(status_code=404, content={"status": status, "message":"Report ID not found. Please check the report ID and try again."})
     elif(status == 'In progress'):
         return JSONResponse(status_code=200, content={"status": status+"...",
                                                       "message":"Please wait for the report to be generated. On Completion, You will get the download url for the file."})
     elif(status == 'Completed'):
         file_name = f'output_{report_id}.csv'
+
+        # Download the file from S3
+        s3.download_file('testbucket-debam', file_name, file_name)
+
         with open(file_name, 'r') as file:
             file_contents = file.read()
         file_contents = file_contents.split('\n')

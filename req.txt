@@ -6,3 +6,4 @@ psycopg2
 DateTime
 pytz
 python-dateutil
+boto3
