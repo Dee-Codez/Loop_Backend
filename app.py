@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.responses import JSONResponse, RedirectResponse
-import uuid,uvicorn,boto3,os,redis
+import uuid,uvicorn,boto3,os,redis,botocore
 from calcUtils import calculations
 from dotenv import load_dotenv
 
@@ -78,6 +78,16 @@ def get_return(report_id: str):
                                                       "message":"Please wait for the report to be generated. On Completion, You will get the download url for the file."})
         else:
             file_name = f'output_{report_id}.csv'
+
+            # Check if the file exists in S3
+            try:
+                s3.head_object(Bucket='testbucket-debam', Key=file_name)
+            except botocore.exceptions.ClientError as e:
+                if e.response['Error']['Code'] == '404':
+                    return JSONResponse(status_code=404, content={"status": status, "message":"File not found in S3. Please check the file name and try again."})
+                else:
+                    # Something else has gone wrong.
+                    raise
 
             # Get the file from S3
             obj = s3.get_object(Bucket='testbucket-debam', Key=file_name)
