@@ -9,14 +9,11 @@ app = FastAPI()
 load_dotenv()
 AWS_ACCESS_KEY = os.getenv('AWS_ACCESS')
 AWS_SECRET_KEY = os.getenv('AWS_SECRET')
-REDIS_HOST = os.getenv('REDIS_HOST')
-REDIS_PORT = os.getenv('REDIS_PORT')
+REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
 REDIS_PASSWORD = os.getenv('REDIS_PASSWORD')
 
-# Global dictionary to store the status of each report
-r = redis.Redis(host=REDIS_HOST,port=REDIS_PORT,password=REDIS_PASSWORD)
-
-report_statuses = {}
+# Redis dictionary to store the status of each report
+r = redis.Redis(host=REDIS_HOST,port=16139,password=REDIS_PASSWORD)
 
 def calculations_wrapper(report_id):
     try:
