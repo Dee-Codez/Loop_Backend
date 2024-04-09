@@ -11,6 +11,7 @@ AWS_ACCESS_KEY = os.getenv('AWS_ACCESS')
 AWS_SECRET_KEY = os.getenv('AWS_SECRET')
 REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
 REDIS_PASSWORD = os.getenv('REDIS_PASSWORD')
+PORT = os.getenv('PORT', 8000)
 
 # Redis dictionary to store the status of each report
 r = redis.Redis(host=REDIS_HOST,port=16139,password=REDIS_PASSWORD)
@@ -117,4 +118,4 @@ def download_report(report_id: str):
     return RedirectResponse(url)
 
 if __name__ == '__main__':
-    uvicorn.run(app, port=8000, host='0.0.0.0')
+    uvicorn.run(app, port=PORT, host='0.0.0.0')
