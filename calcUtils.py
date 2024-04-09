@@ -1,9 +1,8 @@
-import os,psycopg2,pytz,csv
+import os,psycopg2,pytz,csv,boto3,io,botocore
 from dotenv import load_dotenv
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from pytz import utc, timezone
-import boto3
 
 load_dotenv()
 DB_URI = os.getenv('DATABASE_URL')
@@ -195,28 +194,48 @@ def calculations(report_id: str):
 
         filename = f'output_{report_id}.csv'
 
-
         data = {"store_id": store_id,"hour_uptime":hour_uptime,"hour_downtime":hour_downtime ,"day_uptime":day_uptime,"day_downtime":day_downtime ,"week_uptime":weekres_uptime,"week_downtime":weekres_downtime}
-
-        # Check if file exists to write headers
-        if not os.path.isfile(filename):
-            with open(filename, 'w', newline='') as csvfile:
-                fieldnames = data.keys()
-                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                writer.writeheader()
-
-        # Append data to CSV file if it exists
-        with open(filename, 'a', newline='') as csvfile:
-            fieldnames = data.keys()
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            writer.writerow(data)
 
         # Initialize the S3 client
         s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY, aws_secret_access_key=AWS_SECRET_KEY, region_name='ap-southeast-2')
-        # Upload the CSV file to S3
-        with open(filename, 'rb') as data:
-            s3.upload_fileobj(data, 'testbucket-debam', filename)
 
+        # Check if the file exists in S3
+        try:
+            s3.head_object(Bucket='testbucket-debam', Key=filename)
+            file_exists = True
+        except botocore.exceptions.ClientError as e:
+            # If not, raise an error and falsify flag
+            if e.response['Error']['Code'] == '404':
+                file_exists = False
+            else:
+                # Something else has gone wrong.
+                raise
+
+        # Create a StringIO object
+        csvio = io.StringIO()
+
+        # If the file exists, download it and load its content into the StringIO object
+        if file_exists:
+            obj = s3.get_object(Bucket='testbucket-debam', Key=filename)
+            csvio.write(obj['Body'].read().decode('utf-8'))
+
+        # Write the CSV data to the StringIO object
+        fieldnames = data.keys()
+        writer = csv.DictWriter(csvio, fieldnames=fieldnames)
+
+        # Write the headers if the file doesn't exist
+        if not file_exists:
+            writer.writeheader()
+
+        # Write the data
+        writer.writerow(data)
+
+        # Get the CSV data from the StringIO object
+        csv_data = csvio.getvalue()
+
+        # Upload the CSV data to S3
+        s3.put_object(Body=csv_data, Bucket='testbucket-debam', Key=filename)
+        
         print(f"Report for store {k},i.e. {store_id} has been generated successfully.")
         fin_data = {"store_id": store_id, "timezone": timezone_str, "open_time": open_times_str, "close_time": close_times_str,"hour_uptime":hour_uptime,"hour_downtime":hour_downtime ,"day_uptime":day_uptime,"day_downtime":day_downtime ,"week_uptime":weekres_uptime,"week_downtime":weekres_downtime ,"hr_data": hourres, "day_data": dayres,"week_data":weekres}
 
