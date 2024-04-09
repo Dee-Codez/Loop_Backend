@@ -88,7 +88,7 @@ def calculations(report_id: str):
     daybefore = current_time - relativedelta(days=1)
 
     # Connect to the database
-    conn = psycopg2.connect(DB_URI)
+    conn = psycopg2.connect(DB_URI,sslmode='verify-ca', sslrootcert='root.crt')
     # Create a cursor object
     cur = conn.cursor()
     # Get the store IDs and timezones of only 5 stores from the timezones table
