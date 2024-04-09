@@ -117,5 +117,5 @@ def download_report(report_id: str):
     # Redirect to the presigned URL
     return RedirectResponse(url)
 
-if __name__ == '__main__':
-    uvicorn.run(app, port=PORT, host='0.0.0.0')
+# if __name__ == '__main__':
+#     uvicorn.run(app, port=PORT, host='0.0.0.0')
